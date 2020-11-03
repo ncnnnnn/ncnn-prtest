@@ -135,6 +135,9 @@ TODO(__GNUC__)
 #endif
 
 
+#if defined NCNN_THREADS && defined __riscv && !defined __riscv_atomic
+#define NCNN_XADD
+#endif
 
 #if defined NCNN_THREADS && defined __INTEL_COMPILER && !(defined WIN32 || defined _WIN32)
 // atomic increment on the linux version of the Intel(tm) compiler
@@ -145,7 +148,7 @@ TODO(__GNUC__)
 #if defined __clang__ && __clang_major__ >= 3 && !defined __ANDROID__ && !defined __EMSCRIPTEN__ && !defined(__CUDACC__)
 #ifdef __ATOMIC_ACQ_REL
 #define NCNN_XADD(addr, delta) __c11_atomic_fetch_add((_Atomic(int)*)(addr), delta, __ATOMIC_ACQ_REL)
-#elif !(defined __riscv) || (defined __riscv_atomic)
+#elif 
 #define NCNN_XADD(addr, delta) __atomic_fetch_add((_Atomic(int)*)(addr), delta, 4)
 #endif
 #endif
@@ -166,6 +169,9 @@ TODO(__GNUC__)
 #endif
 #endif
 
+#if defined NCNN_THREADS && defined __riscv && !defined __riscv_atomic
+#undef NCNN_XADD
+#endif
 #ifndef NCNN_XADD
 static inline int NCNN_XADD(int* addr, int delta)
 {
