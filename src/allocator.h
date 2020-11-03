@@ -117,21 +117,23 @@ TODO(__GNUC__)
 #warning  __riscv  
 #warning(PRINT_MACRO( __riscv_atomic))
 #warning  __clang__
-*/
+
 
 
 #ifdef __riscv
-#error "hello world __riscv " 
+#warning "hello world __riscv " 
 #else
-#error "hello world no __riscv " 
+#warning "hello world no __riscv " 
 #endif
 
 
 #ifdef __riscv_atomic
-#error "hello world __riscv_atomic " 
+#warning "hello world __riscv_atomic " 
 #else
-#error "hello world no __riscv_atomic " 
+#warning "hello world no __riscv_atomic " 
 #endif
+*/
+
 
 #if defined NCNN_THREADS && defined __INTEL_COMPILER && !(defined WIN32 || defined _WIN32)
 // atomic increment on the linux version of the Intel(tm) compiler
@@ -142,7 +144,7 @@ TODO(__GNUC__)
 #if defined __clang__ && __clang_major__ >= 3 && !defined __ANDROID__ && !defined __EMSCRIPTEN__ && !defined(__CUDACC__)
 #ifdef __ATOMIC_ACQ_REL
 #define NCNN_XADD(addr, delta) __c11_atomic_fetch_add((_Atomic(int)*)(addr), delta, __ATOMIC_ACQ_REL)
-#elif !(defined __riscv && !defined __riscv_atomic)
+#elif !(defined __riscv) || !(defined __riscv_atomic)
 #define NCNN_XADD(addr, delta) __atomic_fetch_add((_Atomic(int)*)(addr), delta, 4)
 #endif
 #endif
