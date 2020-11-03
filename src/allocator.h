@@ -98,43 +98,6 @@ static inline void fastFree(void* ptr)
     }
 }
 
-/*
-#ifdef WIN32
-#pragma message("this is a message")
-#else
-#warning "this is a message"
-#endif 
-#define DO_PRAGMA(x) _Pragma (#x)
-#define TODO(x) DO_PRAGMA(message ("TODO - " #x))
-TODO(Remember to fix this)
-TODO(__GNUC__)
-#pragma message "Compiling " __FILE__  "..."
-#pragma message "Compiling " __GNUC__ "..."
-#define PRINT_MACRO_HELPER(x) #x
-#define PRINT_MACRO(x) #x "=" PRINT_MACRO_HELPER(x)
-//#error "hello world"
-#warning(PRINT_MACRO(__GNUC__))
-#warning  __riscv  
-#warning(PRINT_MACRO( __riscv_atomic))
-#warning  __clang__
-
-
-*/
-
-#ifdef __riscv
-#warning "hello world __riscv " 
-#else
-#warning "hello world no __riscv " 
-#endif
-
-
-#ifdef __riscv_atomic
-#warning "hello world __riscv_atomic " 
-#else
-#warning "hello world no __riscv_atomic " 
-#endif
-
-
 #if defined NCNN_THREADS && defined __riscv && !defined __riscv_atomic
 #define NCNN_XADD
 #endif
