@@ -98,18 +98,40 @@ static inline void fastFree(void* ptr)
     }
 }
 
-＃ifdef WIN32
+/*
+#ifdef WIN32
 #pragma message("this is a message")
 #else
 #warning "this is a message"
 #endif 
-
+#define DO_PRAGMA(x) _Pragma (#x)
+#define TODO(x) DO_PRAGMA(message ("TODO - " #x))
+TODO(Remember to fix this)
+TODO(__GNUC__)
+#pragma message "Compiling " __FILE__  "..."
+#pragma message "Compiling " __GNUC__ "..."
 #define PRINT_MACRO_HELPER(x) #x
-#define PRINT_MACRO(x) #x"="PRINT_MACRO_HELPER(x)
-#error "hello world"
-#warning(PRINT_MACRO(var))
-#warning(PRINT_MACRO(__riscv))
+#define PRINT_MACRO(x) #x "=" PRINT_MACRO_HELPER(x)
+//#error "hello world"
+#warning(PRINT_MACRO(__GNUC__))
+#warning  __riscv  
 #warning(PRINT_MACRO( __riscv_atomic))
+#warning  __clang__
+*/
+
+
+#ifdef __riscv
+#error "hello world __riscv " 
+#else
+#error "hello world no __riscv " 
+#endif
+
+
+#ifdef __riscv_atomic
+#error "hello world __riscv_atomic " 
+#else
+#error "hello world no __riscv_atomic " 
+#endif
 
 #if defined NCNN_THREADS && defined __INTEL_COMPILER && !(defined WIN32 || defined _WIN32)
 // atomic increment on the linux version of the Intel(tm) compiler
