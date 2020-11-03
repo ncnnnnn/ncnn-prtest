@@ -119,6 +119,7 @@ TODO(__GNUC__)
 #warning  __clang__
 
 
+*/
 
 #ifdef __riscv
 #warning "hello world __riscv " 
@@ -132,7 +133,7 @@ TODO(__GNUC__)
 #else
 #warning "hello world no __riscv_atomic " 
 #endif
-*/
+
 
 
 #if defined NCNN_THREADS && defined __INTEL_COMPILER && !(defined WIN32 || defined _WIN32)
