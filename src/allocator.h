@@ -144,7 +144,7 @@ TODO(__GNUC__)
 #if defined __clang__ && __clang_major__ >= 3 && !defined __ANDROID__ && !defined __EMSCRIPTEN__ && !defined(__CUDACC__)
 #ifdef __ATOMIC_ACQ_REL
 #define NCNN_XADD(addr, delta) __c11_atomic_fetch_add((_Atomic(int)*)(addr), delta, __ATOMIC_ACQ_REL)
-#elif !(defined __riscv) || !(defined __riscv_atomic)
+#elif !(defined __riscv) || (defined __riscv_atomic)
 #define NCNN_XADD(addr, delta) __atomic_fetch_add((_Atomic(int)*)(addr), delta, 4)
 #endif
 #endif
