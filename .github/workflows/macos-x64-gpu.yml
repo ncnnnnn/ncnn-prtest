@@ -29,12 +29,12 @@ jobs:
         path: swiftshader-install
         key: swiftshader-macos-install-20200508
     - name: checkout-swiftshader
-      if: steps.cache-swiftshader.outputs.cache-hit != 'true'
+      #if: steps.cache-swiftshader.outputs.cache-hit != 'true'
       uses: actions/checkout@v2
       with:
         repository: google/swiftshader
         path: swiftshader
-        ref: 2dd864470e310d173d35fa95ca3a14d216734aab
+        #ref: 2dd864470e310d173d35fa95ca3a14d216734aab
     - name: checkout-swiftshader-submodules
       if: steps.cache-swiftshader.outputs.cache-hit != 'true'
       run: |
