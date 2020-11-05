@@ -46,6 +46,7 @@ Net::Net()
     weight_staging_vkallocator = 0;
     pipeline_cache = 0;
 #endif // NCNN_VULKAN
+    interrupt = false;
 }
 
 Net::~Net()
