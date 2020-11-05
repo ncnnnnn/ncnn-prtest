@@ -1112,6 +1112,11 @@ int Net::forward_layer(int layer_index, std::vector<Mat>& blob_mats, const Optio
     const Layer* layer = layers[layer_index];
 
     //     NCNN_LOGE("forward_layer %d %s", layer_index, layer->name.c_str());
+    if (interrupt)
+    {
+        NCNN_LOGE("forward_layer interrupt exit");
+        return -1;
+    }
 
     if (layer->one_blob_only)
     {
