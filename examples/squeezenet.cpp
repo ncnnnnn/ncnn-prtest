@@ -14,13 +14,14 @@
 
 #include "net.h"
 
-#include <algorithm>
+#if NCNN_SIMPLEOCV
+#include "simpleocv.h"
+#else
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <stdio.h>
-#include <vector>
+#endif
 
-static int detect_squeezenet(const cv::Mat& bgr, std::vector<float>& cls_scores)
+static int detect_squeezenet(const char* imagepath, std::vector<float>& cls_scores)
 {
     ncnn::Net squeezenet;
 
@@ -30,7 +31,18 @@ static int detect_squeezenet(const cv::Mat& bgr, std::vector<float>& cls_scores)
     squeezenet.load_param("squeezenet_v1.1.param");
     squeezenet.load_model("squeezenet_v1.1.bin");
 
-    ncnn::Mat in = ncnn::Mat::from_pixels_resize(bgr.data, ncnn::Mat::PIXEL_BGR, bgr.cols, bgr.rows, 227, 227);
+    cv::Mat m = cv::imread(imagepath, 1);
+    if (m.empty())
+    {
+        fprintf(stderr, "cv::imread %s failed\n", imagepath);
+        return -1;
+    }
+
+#if NCNN_SIMPLEOCV
+    ncnn::Mat in = ncnn::Mat::from_pixels_resize(m.data, ncnn::Mat::PIXEL_RGB2BGR, m.cols, m.rows, 227, 227);
+#else
+    ncnn::Mat in = ncnn::Mat::from_pixels_resize(m.data, ncnn::Mat::PIXEL_BGR, m.cols, m.rows, 227, 227);
+#endif
 
     const float mean_vals[3] = {104.f, 117.f, 123.f};
     in.substract_mean_normalize(mean_vals, 0);
@@ -86,15 +98,8 @@ int main(int argc, char** argv)
 
     const char* imagepath = argv[1];
 
-    cv::Mat m = cv::imread(imagepath, 1);
-    if (m.empty())
-    {
-        fprintf(stderr, "cv::imread %s failed\n", imagepath);
-        return -1;
-    }
-
     std::vector<float> cls_scores;
-    detect_squeezenet(m, cls_scores);
+    detect_squeezenet(imagepath, cls_scores);
 
     print_topk(cls_scores, 3);
 
