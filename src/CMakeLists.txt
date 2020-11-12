@@ -205,6 +205,12 @@ if(NCNN_OPENMP)
     endif()
 endif()
 
+if(NCNN_SIMPLEOCV)
+    if(NCNN_SIMPLEOCV_STB)
+        target_include_directories(ncnn SYSTEM PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../stb>)
+    endif()
+endif()
+
 if(NCNN_VULKAN)
     find_package(Vulkan QUIET)
     if(NOT Vulkan_FOUND)
