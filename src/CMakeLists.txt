@@ -207,6 +207,7 @@ endif()
 
 if(NCNN_SIMPLEOCV)
     if(NCNN_SIMPLEOCV_STB)
+        include_directories("stb")
         target_include_directories(ncnn SYSTEM PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../stb>)
     endif()
 endif()
