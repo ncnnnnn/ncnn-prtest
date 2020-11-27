@@ -1,9 +1,14 @@
 
 * [absval](#absval)
+* [argmax](#argmax)
 * [batchnorm](#batchnorm)
+* [bias](#bias)
 * [clip](#clip)
 * [concat](#concat)
 * [convolution](#convolution)
+* [dequantize](#dequantize)
+* [lstm](#lstm)
+* [softmax](#softmax)
 
 # absval
 ```
@@ -12,6 +17,18 @@ y = abs(x)
 
 * one_blob_only
 * support_inplace
+
+# argmax
+```
+y = argmax(x, out_max_val, topk)
+```
+
+* one_blob_only
+
+|param id|name|type|default|
+|--|--|--|--|
+|0|out_max_val|int|0|
+|1|topk|int|1|
 
 # batchnorm
 ```
@@ -31,6 +48,22 @@ y = (x - mean) / sqrt(var + eps) * slope + bias
 |slope_data|float|
 |mean_data|float|
 |var_data|float|
+|bias_data|float|
+
+# bias
+```
+y = x + bias
+```
+
+* one_blob_only
+* support_inplace
+
+|param id|name|type|default|
+|--|--|--|--|
+|0|bias_data_size|int|0|
+
+|weight|type|
+|--|--|
 |bias_data|float|
 
 # clip
@@ -88,3 +121,46 @@ y = activation(x3, act_type, act_params)
 |--|--|
 |weight_data|float/fp16/int8|
 |bias_data|float|
+
+# dequantize
+```
+ y = x * scale + bias
+```
+* one_blob_only
+* support_inplace
+
+|param id|name|type|default|
+|--|--|--|--|
+|0|scale|float|1.f|
+|1|bias_term|int|0|
+|2|bias_data_size|int|0|
+
+# lstm
+Apply a single-layer LSTM to a feature sequence of `T` timesteps. The input blob shape is `[w=input_size, h=T]` and the output blob shape is `[w=num_output, h=T]`.
+
+* one_blob_only
+
+|param id|name|type|default|description|
+|--|--|--|--|--|
+|0|num_output|int|0|hidden size of output|
+|1|weight_data_size|int|0|total size of IFOG weight matrix|
+|2|direction|int|0|0=forward, 1=reverse, 2=bidirectional|
+
+|weight|type|shape|description|
+|--|--|--|--|
+|weight_xc_data|float|`[w=input_size, h=num_output * 4, c=num_directions]`||
+|bias_c_data|float|`[w=num_output, h=4, c=num_directions]`||
+|weight_hc_data|float|`[w=num_output, h=num_output * 4, c=num_directions]`||
+
+# softmax
+```
+softmax(x, axis)
+```
+
+* one_blob_only
+* support_inplace
+
+|param id|name|type|default|description|
+|--|--|--|--|--|
+|0|axis|int|0||
+|1|fixbug0|int|0|hack for bug fix, should be 1|
