@@ -205,16 +205,6 @@ if(NCNN_OPENMP)
     endif()
 endif()
 
-if(NCNN_SIMPLEOCV)
-    if(NCNN_SIMPLEOCV_STB)
-        if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../stb/stb_image.h")
-            message(FATAL_ERROR "The submodules stb were not downloaded! Please update submodules with \"git submodule update --init\" and try again.")
-        else()
-            target_include_directories(ncnn SYSTEM PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../stb>)
-        endif()
-    endif()
-endif()
-
 if(NCNN_VULKAN)
     find_package(Vulkan QUIET)
     if(NOT Vulkan_FOUND)
@@ -249,22 +239,16 @@ if(ANDROID_NDK)
 endif()
 
 if(WIN32)
-    target_compile_definitions(ncnn
-        PUBLIC NOMINMAX)
+    target_compile_definitions(ncnn PUBLIC NOMINMAX)
 endif()
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC"
-    OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_SIMULATE_ID MATCHES "MSVC"))
-    target_compile_definitions(ncnn
-        PRIVATE _SCL_SECURE_NO_WARNINGS _CRT_SECURE_NO_DEPRECATE)
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_SIMULATE_ID MATCHES "MSVC"))
+    target_compile_definitions(ncnn PRIVATE _SCL_SECURE_NO_WARNINGS _CRT_SECURE_NO_DEPRECATE)
 else()
-    target_compile_options(ncnn
-        PRIVATE -Wall -Wextra -Wno-unused-function)
+    target_compile_options(ncnn PRIVATE -Wall -Wextra -Wno-unused-function)
+
     if(NOT NCNN_DISABLE_PIC)
-        set_target_properties(ncnn
-            PROPERTIES
-                POSITION_INDEPENDENT_CODE ON
-                INTERFACE_POSITION_INDEPENDENT_CODE ON)
+        set_target_properties(ncnn PROPERTIES POSITION_INDEPENDENT_CODE ON INTERFACE_POSITION_INDEPENDENT_CODE ON)
     endif()
 
     if(CMAKE_BUILD_TYPE MATCHES "(Release|RELEASE|release)")
@@ -276,10 +260,8 @@ else()
     endif()
 
     if(PI3)
-        target_compile_options(ncnn
-            PRIVATE -march=native -mfpu=neon -mfloat-abi=hard)
-        target_compile_definitions(ncnn
-            PRIVATE __ARM_NEON __ANDROID__)
+        target_compile_options(ncnn PRIVATE -march=native -mfpu=neon -mfloat-abi=hard)
+        target_compile_definitions(ncnn PRIVATE __ARM_NEON __ANDROID__)
     endif()
     # target_compile_options(ncnn PRIVATE -march=native)
     # set_target_properties(ncnn PROPERTIES INTERPROCEDURAL_OPTIMIZATION ON)
@@ -294,21 +276,35 @@ if(NCNN_DISABLE_EXCEPTION)
     target_compile_options(ncnn PUBLIC -fno-exceptions)
 endif()
 
-if(ANDROID OR IOS)
-    # disable shared library on android and xcode ios
-    set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS FALSE)
-endif()
-
-if(NOT NCNN_RUNTIME_CPU AND NCNN_AVX2 AND NCNN_TARGET_ARCH STREQUAL "x86")
+if(NCNN_TARGET_ARCH STREQUAL "x86")
+    # enable sse2 unconditionally
     if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_SIMULATE_ID MATCHES "MSVC"))
-        target_compile_options(ncnn PRIVATE /arch:AVX2 /DAVX2 /fp:strict)
+        target_compile_options(ncnn PRIVATE /arch:SSE2 /DSSE2 /fp:strict)
     else()
-        target_compile_options(ncnn PRIVATE -mfma -mf16c -mavx2)
+        target_compile_options(ncnn PRIVATE -msse2 -msse)
+        if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+            target_compile_options(ncnn PRIVATE -msimd128)
+        endif()
+    endif()
+
+    if(NOT NCNN_RUNTIME_CPU AND NCNN_AVX2)
+        if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_SIMULATE_ID MATCHES "MSVC"))
+            target_compile_options(ncnn PRIVATE /arch:AVX2 /DAVX2 /fp:strict)
+        else()
+            target_compile_options(ncnn PRIVATE -mfma -mf16c -mavx2)
+        endif()
     endif()
 endif()
 
-if(NOT NCNN_RUNTIME_CPU AND NCNN_ARM82 AND ((IOS AND CMAKE_OSX_ARCHITECTURES MATCHES "arm64") OR (CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64)")))
-    target_compile_options(ncnn PRIVATE -march=armv8.2-a+fp16)
+if(((IOS AND CMAKE_OSX_ARCHITECTURES MATCHES "arm64") OR (APPLE AND CMAKE_OSX_ARCHITECTURES MATCHES "arm64") OR (CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64)")))
+    if (NOT NCNN_RUNTIME_CPU AND NCNN_ARM82)
+        target_compile_options(ncnn PRIVATE -march=armv8.2-a+fp16)
+    endif()
+endif()
+
+if(ANDROID OR IOS)
+    # disable shared library on android and xcode ios
+    set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS FALSE)
 endif()
 
 add_dependencies(ncnn ncnn-generate-spirv)
@@ -342,14 +338,9 @@ if(NCNN_INSTALL_SDK)
         ${CMAKE_CURRENT_BINARY_DIR}/platform.h
         DESTINATION include/ncnn
     )
-    install(EXPORT ncnn
-        DESTINATION lib/cmake/ncnn)
-    configure_file(${CMAKE_CURRENT_LIST_DIR}/../cmake/ncnnConfig.cmake.in
-        ncnnConfig.cmake
-        @ONLY)
-    install(FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/ncnnConfig.cmake
-        DESTINATION lib/cmake/ncnn)
+    install(EXPORT ncnn DESTINATION lib/cmake/ncnn)
+    configure_file(${CMAKE_CURRENT_LIST_DIR}/../cmake/ncnnConfig.cmake.in ncnnConfig.cmake @ONLY)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ncnnConfig.cmake DESTINATION lib/cmake/ncnn)
 endif()
 
 # add ncnn and generate-spirv to a virtual project group

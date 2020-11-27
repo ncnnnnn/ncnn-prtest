@@ -17,6 +17,7 @@
 #endif
 
 #include <algorithm>
+#include <map>
 #include <set>
 #include <vector>
 
@@ -98,6 +99,41 @@ public:
     }
 };
 
+class MemoryFootprintAllocator : public ncnn::Allocator
+{
+public:
+    MemoryFootprintAllocator()
+    {
+        current_memory_usage = 0;
+        memory_footprint = 0;
+    }
+
+    virtual void* fastMalloc(size_t size)
+    {
+        ncnn::MutexLockGuard g(lock);
+        void* ptr = ncnn::fastMalloc(size);
+        bookkeeper[ptr] = size;
+        current_memory_usage += size;
+        memory_footprint = std::max(memory_footprint, current_memory_usage);
+        return ptr;
+    }
+
+    virtual void fastFree(void* ptr)
+    {
+        ncnn::MutexLockGuard g(lock);
+        size_t size = bookkeeper[ptr];
+        current_memory_usage -= size;
+        bookkeeper.erase(bookkeeper.find(ptr));
+        ncnn::fastFree(ptr);
+    }
+
+public:
+    int current_memory_usage;
+    int memory_footprint;
+    ncnn::Mutex lock;
+    std::map<void*, size_t> bookkeeper;
+};
+
 class NetOptimize : public ncnn::Net
 {
 public:
@@ -136,10 +172,13 @@ public:
     int eliminate_flatten_after_innerproduct();
     int eliminate_reshape_before_binaryop();
 
+    int replace_reduction_with_global_pooling();
+    int replace_prelu_with_leaky_relu();
     int replace_convolution_with_innerproduct_after_global_pooling();
     int replace_convolution_with_innerproduct_after_innerproduct();
 
     int shape_inference();
+    int estimate_memory_footprint();
 
 public:
     int fprintf_param_int_array(int id, const ncnn::Mat& m, FILE* pp);
@@ -2362,6 +2401,116 @@ int NetOptimize::eliminate_reshape_before_binaryop()
     return 0;
 }
 
+int NetOptimize::replace_reduction_with_global_pooling()
+{
+    const size_t layer_count = layers.size();
+    for (int i = 0; i < layer_count; i++)
+    {
+        if (layers[i]->type != "Reduction")
+            continue;
+
+        ncnn::Reduction* reduction1 = (ncnn::Reduction*)layers[i];
+        if (reduction1->operation != 3 || reduction1->reduce_all != 0 || reduction1->coeff != 1.f)
+            continue;
+
+        if (reduction1->axes.w != 1)
+            continue;
+
+        const int* axes_ptr = reduction1->axes;
+        if (axes_ptr[0] != 2 && axes_ptr[0] != 3)
+            continue;
+
+        // Reduction(2/3) - Reduction(2)
+        int top_blob_index = layers[i]->tops[0];
+
+        int j = i + 1;
+        for (; j < layer_count; j++)
+        {
+            if (layers[j]->type != "Reduction")
+                continue;
+
+            if (layers[j]->bottoms.size() != 1)
+                continue;
+
+            if (layers[j]->bottoms[0] == top_blob_index)
+                break;
+        }
+
+        if (j == layer_count)
+            continue;
+
+        ncnn::Reduction* reduction2 = (ncnn::Reduction*)layers[j];
+        if (reduction2->operation != 3 || reduction2->reduce_all != 0 || reduction2->coeff != 1.f)
+            continue;
+
+        if (reduction2->axes.w != 1)
+            continue;
+
+        const int* axes2_ptr = reduction2->axes;
+        if (axes2_ptr[0] != 2)
+            continue;
+
+        fprintf(stderr, "replace_reduction_with_global_pooling %s %s\n", reduction1->name.c_str(), reduction2->name.c_str());
+
+        ncnn::Pooling* pooling = (ncnn::Pooling*)ncnn::create_layer("Pooling");
+
+        pooling->type = "Pooling";
+        pooling->name = reduction2->name;
+        pooling->bottoms = reduction2->bottoms;
+        pooling->tops = reduction2->tops;
+
+        ncnn::ParamDict pd;
+        pooling->load_param(pd);
+
+        pooling->pooling_type = 1;
+        pooling->global_pooling = 1;
+
+        layers[j] = pooling;
+        delete reduction2;
+
+        int bottom_blob_index_final = reduction1->bottoms[0];
+        pooling->bottoms[0] = bottom_blob_index_final;
+        blobs[bottom_blob_index_final].consumers.clear();
+        blobs[bottom_blob_index_final].consumers.push_back(j);
+        reduction1->type = "ncnnfused";
+    }
+
+    return 0;
+}
+
+int NetOptimize::replace_prelu_with_leaky_relu()
+{
+    const size_t layer_count = layers.size();
+    for (int i = 0; i < layer_count; i++)
+    {
+        if (layers[i]->type != "PReLU")
+            continue;
+
+        ncnn::PReLU* prelu = (ncnn::PReLU*)layers[i];
+        if (prelu->num_slope != 1)
+            continue;
+
+        fprintf(stderr, "replace_prelu_with_leaky_relu %s\n", prelu->name.c_str());
+
+        ncnn::ReLU* relu = (ncnn::ReLU*)ncnn::create_layer("ReLU");
+
+        relu->type = "ReLU";
+        relu->name = prelu->name;
+        relu->bottoms = prelu->bottoms;
+        relu->tops = prelu->tops;
+
+        ncnn::ParamDict pd;
+        relu->load_param(pd);
+
+        relu->slope = prelu->slope_data[0];
+
+        layers[i] = relu;
+        delete prelu;
+    }
+
+    return 0;
+}
+
 int NetOptimize::replace_convolution_with_innerproduct_after_global_pooling()
 {
     const size_t layer_count = layers.size();
@@ -2545,7 +2694,7 @@ int NetOptimize::shape_inference()
     // prepare blobs with predefined shape
     for (size_t i = 0; i < blob_count; i++)
     {
-        const ncnn::Blob blob = blobs[i];
+        const ncnn::Blob& blob = blobs[i];
 
         int dims = blob.shape.dims;
         int w = blob.shape.w;
@@ -2608,6 +2757,78 @@ int NetOptimize::shape_inference()
             //             fprintf(stderr, "%d %4d %4d %4d | %2d %s\n", blobs[top_blob_index].shape.dims, blobs[top_blob_index].shape.w, blobs[top_blob_index].shape.h, blobs[top_blob_index].shape.c, top_blob_index, blobs[top_blob_index].name.c_str());
         }
     }
+
+    return 0;
+}
+
+int NetOptimize::estimate_memory_footprint()
+{
+    const size_t layer_count = layers.size();
+    const size_t blob_count = blobs.size();
+
+    MemoryFootprintAllocator allocator;
+
+    ncnn::Extractor ex = create_extractor();
+
+    ex.set_blob_allocator(&allocator);
+    ex.set_workspace_allocator(&allocator);
+
+    // prepare Input blobs
+    for (size_t i = 0; i < layer_count; i++)
+    {
+        const ncnn::Layer* layer = layers[i];
+        if (layer->type == "ncnnfused")
+            continue;
+
+        if (layer->type != "Input")
+            continue;
+
+        ncnn::Input* input = (ncnn::Input*)layer;
+
+        int w = input->w;
+        int h = input->h;
+        int c = input->c;
+
+        int dims = 0;
+        if (w == 0 && h == 0 && c == 0) dims = 0;
+        if (w != 0 && h == 0 && c == 0) dims = 1;
+        if (w != 0 && h != 0 && c == 0) dims = 2;
+        if (w != 0 && h != 0 && c != 0) dims = 3;
+
+        if (dims == 0)
+        {
+            fprintf(stderr, "Input layer %s without shape info, estimate_memory_footprint aborted\n", layer->name.c_str());
+            return -1;
+        }
+
+        ncnn::Mat m;
+        if (dims == 1) m.create(w, 4u, &allocator);
+        if (dims == 2) m.create(w, h, 4u, &allocator);
+        if (dims == 3) m.create(w, h, c, 4u, &allocator);
+
+        ex.input(layer->tops[0], m);
+
+        fprintf(stderr, "input = %s\n", blobs[layer->tops[0]].name.c_str());
+    }
+
+    // find output blobs and do inference
+    std::vector<ncnn::Mat> outputs;
+    for (size_t i = 0; i < blob_count; i++)
+    {
+        const ncnn::Blob& blob = blobs[i];
+
+        if (!blob.consumers.empty())
+            continue;
+
+        // treat blob without any consumers as output
+        ncnn::Mat m;
+        ex.extract(int(i), m);
+        outputs.push_back(m);
+
+        fprintf(stderr, "extract = %s\n", blob.name.c_str());
+    }
+
+    fprintf(stderr, "estimated memory footprint = %.2f KB = %.2f MB\n", allocator.memory_footprint / 1024.f, allocator.memory_footprint / 1024.f / 1024.f);
 
     return 0;
 }
@@ -3664,6 +3885,10 @@ int main(int argc, char** argv)
     optimizer.fuse_innerproduct_batchnorm();
     optimizer.fuse_innerproduct_add();
     optimizer.fuse_innerproduct_dropout();
+
+    optimizer.replace_reduction_with_global_pooling();
+    optimizer.replace_prelu_with_leaky_relu();
+
     optimizer.fuse_convolution_activation();
     optimizer.fuse_convolutiondepthwise_activation();
     optimizer.fuse_deconvolution_activation();
@@ -3686,6 +3911,8 @@ int main(int argc, char** argv)
     optimizer.eliminate_orphaned_memorydata();
 
     optimizer.shape_inference();
+
+    optimizer.estimate_memory_footprint();
 
     optimizer.save(outparam, outbin);
 

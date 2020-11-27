@@ -174,7 +174,8 @@ static std::vector<int> get_node_attr_from_input_ai(const onnx::TensorProto& tp)
         }
         for (int j = 0; j < size; j++)
         {
-            v.push_back(shape_data[j]);
+            int vi = std::max(std::min(shape_data[j], (::google::protobuf::int64)INT_MAX), (::google::protobuf::int64)INT_MIN);
+            v.push_back(vi);
         }
     }
     // int32
@@ -3292,7 +3293,12 @@ int main(int argc, char** argv)
             }
 
             int pad_size = (int)pads.size();
-            int top, bottom, left, right;
+            int top = 0;
+            int bottom = 0;
+            int left = 0;
+            int right = 0;
+            int front = 0;
+            int behind = 0;
             if (pad_size == 8)
             {
                 //NCHW
@@ -3300,10 +3306,12 @@ int main(int argc, char** argv)
                 bottom = pads[6];
                 left = pads[3];
                 right = pads[7];
+                front = pads[1];
+                behind = pads[5];
             }
             else if (pad_size == 6)
             {
-                //CHW
+                //NHW
                 top = pads[1];
                 bottom = pads[4];
                 left = pads[2];
@@ -3311,9 +3319,7 @@ int main(int argc, char** argv)
             }
             else
             {
-                //HW
-                top = pads[0];
-                bottom = pads[2];
+                //NW
                 left = pads[1];
                 right = pads[3];
             }
@@ -3324,6 +3330,8 @@ int main(int argc, char** argv)
             fprintf(pp, " 3=%d", right);
             fprintf(pp, " 4=%d", type);
             fprintf(pp, " 5=%e", value);
+            fprintf(pp, " 7=%d", front);
+            fprintf(pp, " 8=%d", behind);
         }
         else if (op == "Pow")
         {
@@ -3444,6 +3452,7 @@ int main(int argc, char** argv)
         else if (op == "Resize")
         {
             std::string mode = get_node_attr_s(node, "mode");
+            std::string align = get_node_attr_s(node, "coordinate_transformation_mode");
 
             std::vector<float> scales;
             std::vector<int> sizes;
@@ -3518,11 +3527,18 @@ int main(int argc, char** argv)
                 output_width = sizes[3];
             }
 
+            int align_corner = 0;
+            if (align == "align_corners")
+            {
+                align_corner = 1;
+            }
+
             fprintf(pp, " 0=%d", resize_type);
             fprintf(pp, " 1=%e", h_scale);
             fprintf(pp, " 2=%e", w_scale);
             fprintf(pp, " 3=%d", output_height);
             fprintf(pp, " 4=%d", output_width);
+            fprintf(pp, " 6=%d", align_corner);
         }
         else if (op == "ShuffleChannel")
         {
@@ -3738,6 +3754,7 @@ int main(int argc, char** argv)
         else if (op == "Upsample")
         {
             std::string mode = get_node_attr_s(node, "mode");
+            std::string align = get_node_attr_s(node, "coordinate_transformation_mode");
 
             std::vector<float> scales;
 
@@ -3788,9 +3805,16 @@ int main(int argc, char** argv)
                 fprintf(stderr, "Unsupported Upsample scales !\n");
             }
 
+            int align_corner = 0;
+            if (align == "align_corners")
+            {
+                align_corner = 1;
+            }
+
             fprintf(pp, " 0=%d", resize_type);
             fprintf(pp, " 1=%e", h_scale);
             fprintf(pp, " 2=%e", w_scale);
+            fprintf(pp, " 6=%d", align_corner);
         }
         else if (op == "Unsqueeze")
         {
