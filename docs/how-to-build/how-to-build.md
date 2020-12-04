@@ -426,7 +426,7 @@ Download and install Ninja 1.8.2 from https://ninja-build.org/
 
 Download and Install C++Builder Community Edition 10.3.3 from https://www.embarcadero.com/products/cbuilder/starter/free-download/
 
-Start the command prompt: `Start → Programs → Embarcadero RAD Studio 10.3 → Visual Studio Tools → x64 Native Tools Command Prompt for VS 2017`
+Start the command prompt: `Start → Programs → Embarcadero RAD Studio 10.3 → RAD Studio Command Prompt`
 
 
 Build ncnn library :
