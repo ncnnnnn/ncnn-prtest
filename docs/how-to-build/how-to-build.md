@@ -14,7 +14,7 @@ $ git submodule update --init
 * [Build for Android](#build-for-android)
 * [Build for iOS on MacOSX with xcode](#build-for-ios-on-macosx-with-xcode)
 * [Build for iOS on Linux with cctools-port](#build-for-ios-on-linux-with-cctools-port)
-* [Build for Windows x32 using CBuilder](#build-for-windows-x32-using-C++-Builder-Community-Edition)
+* [Build for Windows x32 using C++Builder](#build-for-windows-x32-using-C++Builder-Community-Edition)
 ***
 
 ### Build for Linux
@@ -412,7 +412,7 @@ Pick `ncnn.framework` folder for app development.
 
 ***
 
-### Build for Windows x32 using CBuilder
+### Build for Windows x32 using C++Builder
 
 Download and install CMake 3.10 from https://cmake.org/download/
 
