@@ -54,11 +54,7 @@ option(NCNN_BUILD_TESTS "build tests" OFF)
 option(NCNN_COVERAGE "build for coverage" OFF)
 option(NCNN_BUILD_BENCHMARK "build benchmark" ON)
 
-<<<<<<< HEAD
-if(ANDROID OR IOS OR NCNN_SIMPLESTL)
-=======
 if(ANDROID OR IOS OR NCNN_SIMPLESTL OR CMAKE_CROSSCOMPILING)
->>>>>>> 73319905989d63ee61f094b6e38d0a1beb4af4c1
     option(NCNN_DISABLE_RTTI "disable rtti" ON)
     option(NCNN_BUILD_TOOLS "build tools" OFF)
     option(NCNN_BUILD_EXAMPLES "build examples" OFF)

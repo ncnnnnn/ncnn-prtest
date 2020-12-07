@@ -997,11 +997,7 @@ int main(int argc, char** argv)
     // global definition line
     // [layer count] [blob count]
     std::set<std::string> blob_names;
-<<<<<<< HEAD
-    for (int i = 0; i < node_count; i++)
-=======
     for (size_t i = 0; i < node_count; i++)
->>>>>>> 73319905989d63ee61f094b6e38d0a1beb4af4c1
     {
         MXNetNode& n = nodes[i];
 
@@ -1146,11 +1142,7 @@ int main(int argc, char** argv)
 
     int internal_split = 0;
 
-<<<<<<< HEAD
-    for (int i = 0; i < node_count; i++)
-=======
     for (size_t i = 0; i < node_count; i++)
->>>>>>> 73319905989d63ee61f094b6e38d0a1beb4af4c1
     {
         const MXNetNode& n = nodes[i];
 
@@ -2309,11 +2301,7 @@ int main(int argc, char** argv)
                 // if axis set, reduce according to axis
                 fprintf(pp, " 1=%d", 0);
                 fprintf(pp, " -23303=%zd", axis.size());
-<<<<<<< HEAD
-                for (int i = 0; i < axis.size(); i++)
-=======
                 for (size_t i = 0; i < axis.size(); i++)
->>>>>>> 73319905989d63ee61f094b6e38d0a1beb4af4c1
                 {
                     if (axis[i] == 0 || axis[i] > 3 || axis[i] < -3)
                         fprintf(stderr, "Unsupported reduction axis !\n");
