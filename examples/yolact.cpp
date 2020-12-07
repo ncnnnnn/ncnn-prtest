@@ -298,7 +298,11 @@ static int detect_yolact(const cv::Mat& bgr, std::vector<Object>& objects)
     }
 
     // generate mask
+<<<<<<< HEAD
     for (int i = 0; i < objects.size(); i++)
+=======
+    for (int i = 0; i < (int)objects.size(); i++)
+>>>>>>> 73319905989d63ee61f094b6e38d0a1beb4af4c1
     {
         Object& obj = objects[i];
 

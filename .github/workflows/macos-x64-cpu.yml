@@ -8,7 +8,11 @@ jobs:
     - name: protobuf
       run: brew install protobuf opencv3
     - name: configure
+<<<<<<< HEAD
       run: mkdir build && cd build && cmake -DNCNN_BUILD_TESTS=ON ..
+=======
+      run: mkdir build && cd build && cmake -DNCNN_BUILD_TESTS=ON -DNCNN_SIMPLEOMP=ON ..
+>>>>>>> 73319905989d63ee61f094b6e38d0a1beb4af4c1
     - name: build
       run: cmake --build build -j 2
     - name: test

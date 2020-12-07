@@ -952,18 +952,30 @@ inline void Mat::fill(T _v)
     }
 }
 
+<<<<<<< HEAD
 inline Mat Mat::clone(Allocator* allocator) const
+=======
+inline Mat Mat::clone(Allocator* _allocator) const
+>>>>>>> 73319905989d63ee61f094b6e38d0a1beb4af4c1
 {
     if (empty())
         return Mat();
 
     Mat m;
     if (dims == 1)
+<<<<<<< HEAD
         m.create(w, elemsize, elempack, allocator);
     else if (dims == 2)
         m.create(w, h, elemsize, elempack, allocator);
     else if (dims == 3)
         m.create(w, h, c, elemsize, elempack, allocator);
+=======
+        m.create(w, elemsize, elempack, _allocator);
+    else if (dims == 2)
+        m.create(w, h, elemsize, elempack, _allocator);
+    else if (dims == 3)
+        m.create(w, h, c, elemsize, elempack, _allocator);
+>>>>>>> 73319905989d63ee61f094b6e38d0a1beb4af4c1
 
     if (total() > 0)
     {

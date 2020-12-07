@@ -14,7 +14,11 @@ $ git submodule update --init
 * [Build for Android](#build-for-android)
 * [Build for iOS on MacOSX with xcode](#build-for-ios-on-macosx-with-xcode)
 * [Build for iOS on Linux with cctools-port](#build-for-ios-on-linux-with-cctools-port)
+<<<<<<< HEAD
 * [Build for Windows x32 using C++Builder](#build-for-windows-x32-using-CBuilder-Community-Edition)
+=======
+
+>>>>>>> 73319905989d63ee61f094b6e38d0a1beb4af4c1
 ***
 
 ### Build for Linux
@@ -409,6 +413,7 @@ $ cp Info.plist ncnn.framework/Versions/A/Resources/
 ```
 
 Pick `ncnn.framework` folder for app development.
+<<<<<<< HEAD
 
 ***
 
@@ -442,3 +447,5 @@ Build ncnn library :
 Note: To speed up compilation process on multi core machines, configuring `cmake` to use `jom` or `ninja` using `-G` flag is recommended.
 
 ***
+=======
+>>>>>>> 73319905989d63ee61f094b6e38d0a1beb4af4c1

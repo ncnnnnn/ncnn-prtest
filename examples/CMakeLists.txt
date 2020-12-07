@@ -51,4 +51,8 @@ else()
     ncnn_add_example(simplepose)
     ncnn_add_example(retinaface)
     ncnn_add_example(yolact)
+<<<<<<< HEAD
+=======
+    ncnn_add_example(nanodet)
+>>>>>>> 73319905989d63ee61f094b6e38d0a1beb4af4c1
 endif()

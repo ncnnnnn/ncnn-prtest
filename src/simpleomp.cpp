@@ -47,9 +47,23 @@ extern "C" typedef void (*kmpc_micro_14)(int32_t* gtid, int32_t* tid, void*, voi
 extern "C" typedef void (*kmpc_micro_15)(int32_t* gtid, int32_t* tid, void*, void*, void*, void*, void*, void*, void*, void*, void*, void*, void*, void*, void*, void*, void*);
 #endif // __EMSCRIPTEN__
 
+<<<<<<< HEAD
 static void init_g_kmp_global();
 static void* kmp_threadfunc(void* args);
 
+=======
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+static void init_g_kmp_global();
+static void* kmp_threadfunc(void* args);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
+>>>>>>> 73319905989d63ee61f094b6e38d0a1beb4af4c1
 namespace ncnn {
 
 class KMPTask
@@ -168,8 +182,11 @@ class KMPGlobal
 public:
     KMPGlobal()
     {
+<<<<<<< HEAD
         is_initialized = PTHREAD_ONCE_INIT;
 
+=======
+>>>>>>> 73319905989d63ee61f094b6e38d0a1beb4af4c1
         kmp_max_threads = 0;
         kmp_threads = 0;
         kmp_threads_tid = 0;
@@ -187,7 +204,11 @@ public:
     }
 
 public:
+<<<<<<< HEAD
     pthread_once_t is_initialized;
+=======
+    static pthread_once_t is_initialized;
+>>>>>>> 73319905989d63ee61f094b6e38d0a1beb4af4c1
 
     void init()
     {
@@ -256,6 +277,11 @@ public:
 
 } // namespace ncnn
 
+<<<<<<< HEAD
+=======
+pthread_once_t ncnn::KMPGlobal::is_initialized = PTHREAD_ONCE_INIT;
+
+>>>>>>> 73319905989d63ee61f094b6e38d0a1beb4af4c1
 static ncnn::KMPGlobal g_kmp_global;
 
 static ncnn::ThreadLocalStorage tls_num_threads;
